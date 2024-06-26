@@ -1,0 +1,50 @@
+## Vim
+alias vim='nvim'
+function fuzzy_nvim_start {
+    if [ "$#" -eq 0 ]; then
+        nvim +'Telescope find_files'
+    elif [ -d "$1" ]; then
+        nvim +"Telescope find_files cwd=$1"
+    else
+        nvim $@
+    fi
+}
+alias v='fuzzy_nvim_start'
+alias vim_cd='(){vim "$1" -c "cd $1"}'
+alias icloud='cd ~/Library/Mobile\ Documents/com\~apple\~CloudDocs'
+## Dotfiles
+alias dotfiles='vim_cd ~/.dotfiles'
+alias vimc='vim_cd ~/.config/nvim'
+alias z='vim ~/.dotfiles/.zshrc'
+alias tkz='vim ~/.dotfiles/tkww/.zshrc'
+alias soz='source ~/.zshrc'
+alias aliases='vim ~/.dotfiles/.zsh_aliases'
+alias tbaliases='vim ~/.dotfiles/tkww/.zsh_aliases'
+alias soaliases='source ~/.zsh_aliases'
+## Kubectl
+alias k='kubectl'
+
+kdesc(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl describe $1 {}}
+alias kd='kdesc'
+
+kexec(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl exec $1/{} -- /bin/bash}
+alias ke='kexec'
+
+klog(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl logs -f $1/{}}
+alias klogs='klog'
+
+kcopy(){kubectl get $1 | fzf | awk '{print $1}' | pbcopy}
+alias kcp='kcopy'
+## Utils
+alias c='clear'
+alias e='exit'
+alias ls='eza -la --group-directories-first --icons'
+alias t='tmux'
+alias tn='(){tmux new -s $1}'
+## Git
+alias gs='git status -s'
+alias ga='git add .'
+alias gc='(){git commit -m $1}'
+alias gcd='git checkout development'
+alias gcp='git checkout production'
+alias gcq='git checkout qa'
