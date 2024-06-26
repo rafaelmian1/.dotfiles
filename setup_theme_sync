@@ -1,0 +1,37 @@
+#!/bin/bash
+
+brew install make
+brew install cormacrelf/tap/dark-notify
+
+git clone git@github.com:bouk/dark-mode-notify.git /tmp/dark-mode-notify
+
+cd /tmp/dark-mode-notify
+
+make install
+
+sudo mv .build/release/dark-mode-notify /usr/local/bin/dark-mode-notify
+
+rm -rf /tmp/dark-mode-notify
+
+echo "<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dark-mode-notify</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.dotfiles/.log/dark-mode-notify-stderr.log</string>
+    <key>StandardOutPath</key>
+    <string>$HOME/.dotfiles/.log/dark-mode-notify-stdout.log</string>
+    <key>ProgramArguments</key>
+    <array>
+       <string>/usr/local/bin/dark-mode-notify</string>
+       <string>$HOME/.dotfiles/switch_theme</string>
+    </array>
+</dict>
+</plist>" >~/Library/LaunchAgents/dark-mode-notify.plist
+
+launchctl load -w ~/Library/LaunchAgents/dark-mode-notify.plist

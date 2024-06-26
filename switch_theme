@@ -1,0 +1,11 @@
+#!/bin/bash
+KITTY="/Applications/kitty.app/Contents/MacOS/kitty"
+SOCKET="$(ls /tmp/kitty*)"
+
+if [ "$DARKMODE" = "1" ]; then
+  cp ~/.config/kitty/rose-pine-main.conf ~/.config/kitty/current-theme.conf
+else
+  cp ~/.config/kitty/rose-pine-dawn.conf ~/.config/kitty/current-theme.conf
+fi
+
+$KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/current-theme.conf"
