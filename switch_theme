@@ -1,0 +1,9 @@
+#!/bin/bash
+KITTY="/Applications/kitty.app/Contents/MacOS/kitty"
+SOCKET="$(ls /tmp/kitty*)"
+
+if [ "$DARKMODE" = "1" ]; then
+  $KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/Ayu Mirage.conf"
+else
+  $KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/Ayu Light.conf"
+fi
