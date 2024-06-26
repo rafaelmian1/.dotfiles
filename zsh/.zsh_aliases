@@ -1,0 +1,26 @@
+## Vim
+alias vim='nvim'
+alias vim_cd='(){vim "$1" -c "cd $1"}'
+## Dotfiles
+alias dotfiles='vim_cd ~/.dotfiles'
+alias vimc='vim_cd ~/.config/nvim'
+alias z='vim ~/.dotfiles/zsh/.zshrc'
+alias tkz='vim ~/.dotfiles/tkww/.zshrc'
+alias soz='source ~/.zshrc'
+alias aliases='vim ~/.dotfiles/zsh/.zsh_aliases'
+alias tbaliases='vim ~/.dotfiles/tkww/.zsh_aliases'
+alias soaliases='source ~/.zsh_aliases'
+## Kubectl
+alias k='kubectl'
+## Utils
+alias c='clear'
+alias e='exit'
+alias ls='eza -la --group-directories-first --icons'
+alias t='tmux'
+alias tn='(){tmux new -s $1}'
+## Git
+alias gs='git status -s'
+alias ga='git add .'
+alias gc='(){git commit -m $1}'
+alias gcd='git checkout development'
+alias gcp='git checkout production'
