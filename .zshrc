@@ -29,6 +29,9 @@ zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
+zinit light jeffreytse/zsh-vi-mode
+
+ZVM_VI_EDITOR=nvim
 
 # Add in snippets
 zinit snippet OMZP::git
@@ -67,8 +70,9 @@ setopt hist_ignore_dups
 setopt hist_find_no_dups
 
 # Aliases
-source ~/.zsh_aliases
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 [[ ! -f ~/.zsh_cdnvm ]] || source ~/.zsh_cdnvm
+[[ ! -f ~/.zsh_kubectl ]] || source ~/.zsh_kubectl
 [[ ! -f ~/.zsh_aliases_personal ]] || source ~/.zsh_aliases_personal
 
 # Completion styling
