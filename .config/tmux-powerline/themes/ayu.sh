@@ -15,8 +15,8 @@ else
 fi
 
 # See Color formatting section below for details on what colors can be used here.
-TMUX_POWERLINE_DEFAULT_BACKGROUND_COLOR=${TMUX_POWERLINE_DEFAULT_BACKGROUND_COLOR:-'235'}
-TMUX_POWERLINE_DEFAULT_FOREGROUND_COLOR=${TMUX_POWERLINE_DEFAULT_FOREGROUND_COLOR:-'1'}
+TMUX_POWERLINE_DEFAULT_BACKGROUND_COLOR=${TMUX_POWERLINE_DEFAULT_BACKGROUND_COLOR:-0}
+TMUX_POWERLINE_DEFAULT_FOREGROUND_COLOR=${TMUX_POWERLINE_DEFAULT_FOREGROUND_COLOR:-7}
 # shellcheck disable=SC2034
 TMUX_POWERLINE_SEG_AIR_COLOR=$(air_color)
 
@@ -27,6 +27,12 @@ TMUX_POWERLINE_DEFAULT_RIGHTSIDE_SEPARATOR=${TMUX_POWERLINE_DEFAULT_RIGHTSIDE_SE
 # The `format regular` and `format inverse` functions are provided as conveniences
 
 # shellcheck disable=SC2128
+
+# Kitty colors
+# KITTY_BG=$(grep -i '^background ' ~/.config/kitty/current-theme.conf | awk '{print $2}')
+# KITTY_FG=$(grep -i '^foreground ' ~/.config/kitty/current-theme.conf | awk '{print $2}')
+#"#[fg=$KITTY_BG,bg=$KITTY_FG]"
+
 if [ -z "$TMUX_POWERLINE_WINDOW_STATUS_CURRENT" ]; then
 	TMUX_POWERLINE_WINDOW_STATUS_CURRENT=(
 		"#[$(format inverse)]"
@@ -102,7 +108,7 @@ fi
 # shellcheck disable=SC1143,SC2128
 if [ -z "$TMUX_POWERLINE_LEFT_STATUS_SEGMENTS" ]; then
 	TMUX_POWERLINE_LEFT_STATUS_SEGMENTS=(
-		"tmux_session_info 13 0"
+		"tmux_session_info 3 0"
 		"pwd 4 0"
 		#"hostname 33 0"
 		#"mode_indicator 165 0"
@@ -126,18 +132,18 @@ if [ -z "$TMUX_POWERLINE_RIGHT_STATUS_SEGMENTS" ]; then
 		#"pwd 6 0"
 		#"macos_notification_count 29 255"
 		#"mailcount 9 255"
-		"now_playing 6 0"
-		#"cpu 240 136"
+		"now_playing 10 0"
+		# "cpu 240 136"
 		#"load 237 167"
 		#"tmux_mem_cpu_load 234 136"
-		#"battery 137 127"
+		"battery 0 10"
 		#"air ${TMUX_POWERLINE_SEG_AIR_COLOR} 255"
 		#"weather 37 255"
 		#"rainbarf 0 ${TMUX_POWERLINE_DEFAULT_FOREGROUND_COLOR}"
 		#"xkb_layout 125 117"
 		#"date_day 235 136"
-		#"date 235 136 ${TMUX_POWERLINE_SEPARATOR_LEFT_THIN}"
-		#"time 235 136 ${TMUX_POWERLINE_SEPARATOR_LEFT_THIN}"
+		"date 7 0"
+		"time 7 0"
 		#"utc_time 235 136 ${TMUX_POWERLINE_SEPARATOR_LEFT_THIN}"
 	)
 fi

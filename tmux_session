@@ -1,0 +1,145 @@
+#!/bin/bash
+set -euo pipefail
+
+TMUXP_DIR="$HOME/.tmuxp"
+
+# ── Dependency checks ────────────────────────────────────────────────
+_require() {
+  for cmd in "$@"; do
+    command -v "$cmd" &>/dev/null || { echo "error: '$cmd' is not installed" >&2; exit 1; }
+  done
+}
+
+# ── Helpers ──────────────────────────────────────────────────────────
+_in_tmux() { [ -n "${TMUX:-}" ]; }
+
+_select_workspace() {
+  local files
+  files=$(find "$TMUXP_DIR" -maxdepth 1 \( -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | sort)
+  [ -z "$files" ] && { echo "error: no workspace files found in $TMUXP_DIR" >&2; exit 1; }
+  echo "$files" | xargs -I{} basename {} | fzf --prompt="workspace > " --height=~40% --reverse || exit 1
+}
+
+_select_workdir() {
+  zoxide query -i 2>/dev/null || exit 1
+}
+
+_prompt() {
+  local label="$1" default="${2:-}"
+  local input
+  if [ -n "$default" ]; then
+    read -rp "$label [$default]: " input
+    echo "${input:-$default}"
+  else
+    read -rp "$label: " input
+    [ -z "$input" ] && { echo "error: value required" >&2; exit 1; }
+    echo "$input"
+  fi
+}
+
+# ── Core load logic ─────────────────────────────────────────────────
+_load_here() {
+  # Replace current window with workspace (inside tmux only)
+  local workspace="$1" window_name="$2" work_dir="$3"
+  local old_window
+  old_window=$(tmux display-message -p '#{window_id}')
+
+  export SESSION_NAME WINDOW_NAME="$window_name" WORK_DIR="$work_dir"
+  tmuxp load -a -y "$TMUXP_DIR/$workspace"
+  tmux kill-window -t "$old_window" 2>/dev/null || true
+}
+
+_load_window() {
+  # Append a new window to the current session (inside tmux only)
+  local workspace="$1" window_name="${2:-main}" work_dir="${3:-$(pwd)}"
+
+  export SESSION_NAME WINDOW_NAME="$window_name" WORK_DIR="$work_dir"
+  tmuxp load -a -y "$TMUXP_DIR/$workspace"
+}
+
+_load_new_session() {
+  # Create a brand-new session with the workspace
+  local workspace="$1" session_name="$2" window_name="${3:-main}" work_dir="${4:-$(pwd)}"
+
+  export SESSION_NAME="$session_name" WINDOW_NAME="$window_name" WORK_DIR="$work_dir"
+  if _in_tmux; then
+    tmuxp load -d -y "$TMUXP_DIR/$workspace"
+    tmux switch-client -t "$session_name"
+  else
+    tmuxp load -y "$TMUXP_DIR/$workspace"
+  fi
+}
+
+# ── Subcommands ──────────────────────────────────────────────────────
+cmd_base() {
+  if _in_tmux; then
+    # Inside tmux: load workspace in current window (replace it)
+    local work_dir window_name workspace
+    work_dir=$(pwd)
+    window_name=$(_prompt "window name" "$(basename "$work_dir")")
+    workspace=$(_select_workspace)
+    _load_here "$workspace" "$window_name" "$work_dir"
+  else
+    # Outside tmux: full interactive (same as session)
+    cmd_session
+  fi
+}
+
+cmd_window() {
+  local work_dir window_name workspace
+  work_dir=$(_select_workdir)
+  window_name=$(_prompt "window name" "$(basename "$work_dir")")
+  workspace=$(_select_workspace)
+
+  if _in_tmux; then
+    _load_window "$workspace" "$window_name" "$work_dir"
+  else
+    local session_name
+    session_name=$(_prompt "session name" "$(basename "$work_dir")")
+    _load_new_session "$workspace" "$session_name" "$window_name" "$work_dir"
+  fi
+}
+
+cmd_session() {
+  local session_name work_dir window_name workspace
+  session_name=$(_prompt "session name")
+  work_dir=$(_select_workdir)
+  window_name=$(_prompt "window name" "$(basename "$work_dir")")
+  workspace=$(_select_workspace)
+
+  _load_new_session "$workspace" "$session_name" "$window_name" "$work_dir"
+}
+
+# ── Usage ────────────────────────────────────────────────────────────
+usage() {
+  cat <<'EOF'
+Usage: tmux_session [command]
+
+Commands:
+  (none)    In tmux  → load workspace in current window (ask workspace)
+            Outside  → full interactive (same as session)
+  window    Load workspace as new window (ask work dir, window name, workspace)
+  session   Full interactive (ask session, work dir, window name, workspace)
+
+Aliases:  ts = base | tsw = window | tss = session
+
+Options:
+  --help    Show this help message
+EOF
+}
+
+# ── Main ─────────────────────────────────────────────────────────────
+main() {
+  _require tmuxp fzf zoxide
+
+  case "${1:-}" in
+    --help|-h) usage ;;
+    window)    cmd_window ;;
+    session)   cmd_session ;;
+    "")        cmd_base ;;
+    *)         echo "error: unknown command '$1'" >&2; usage >&2; exit 1 ;;
+  esac
+}
+
+main "$@"
+

@@ -1,0 +1,22 @@
+gui:
+  theme:
+    activeBorderColor:
+      - yellow
+      - bold
+    searchingActiveBorderColor:
+      - cyan
+      - bold
+    optionsTextColor:
+      - cyan
+    selectedLineBgColor:
+      - default
+    inactiveViewSelectedLineBgColor:
+      - bold
+    defaultFgColor:
+      - default
+git:
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
+os:
+  edit: "nvr -cc vsplit --remote-wait +'set bufhidden=wipe' {{filename}}"
