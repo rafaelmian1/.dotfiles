@@ -1,0 +1,42 @@
+#!/bin/bash
+
+alias s3='aws s3'
+
+## List S3 buckets with fzf
+s3List(){
+    aws s3 ls | awk '{print $3}' | fzf --height 40% --preview "aws s3 ls {}"
+}
+alias s3ls='s3List'
+
+##  S3 download
+s3download() {
+    local bucket=$(aws s3 ls | awk '{print $3}' | fzf --prompt="Select S3 bucket: " --height 40% --preview "aws s3 ls {}")
+    local file=$(aws s3 ls "s3://$bucket" | awk '{print $4}' | fzf --prompt="Select file to download: " --height 40% --preview "aws s3 cp s3://$bucket/{} -")
+
+    if [[ -n "$file" ]]; then
+        aws s3 cp "s3://$bucket/$file" .
+    fi
+}
+alias s3down='s3download'
+
+## S3 upload
+s3upload() {
+    local bucket=$(aws s3 ls | awk '{print $3}' | fzf --prompt="Select destination bucket: " --height 40% --preview "aws s3 ls {}")
+    local file=$(eza | fzf --prompt="Select file to upload: " --height 40% --preview "cat {}")
+
+    if [[ -n "$file" ]]; then
+        aws s3 cp "$file" "s3://$bucket/"
+    fi
+}
+alias s3up='s3upload'
+
+## S3 upload public
+s3uploadPublic() {
+    local bucket=$(aws s3 ls | awk '{print $3}' | fzf --prompt="Select destination bucket: " --height 40% --preview "aws s3 ls {}")
+    local file=$(eza | fzf --prompt="Select file to upload: " --height 40% --preview "cat {}")
+
+    if [[ -n "$file" ]]; then
+        aws s3 cp "$file" "s3://$bucket/" --acl public-read
+    fi
+}
+alias s3upp='s3uploadPublic'
