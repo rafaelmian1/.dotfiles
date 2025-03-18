@@ -39,6 +39,7 @@ alias e='exit'
 list(){eza -la --group-directories-first --icons $1}
 alias ls='list'
 alias t='tmux'
+alias lz='lazygit'
 alias tn='(){tmux new -s $1}'
 alias ta='(){tmux attach -t $1}'
 
