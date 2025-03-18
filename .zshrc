@@ -67,8 +67,9 @@ setopt hist_ignore_dups
 setopt hist_find_no_dups
 
 # Aliases
-source ~/.zsh_aliases
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 [[ ! -f ~/.zsh_cdnvm ]] || source ~/.zsh_cdnvm
+[[ ! -f ~/.zsh_kubectl ]] || source ~/.zsh_kubectl
 [[ ! -f ~/.zsh_aliases_personal ]] || source ~/.zsh_aliases_personal
 
 # Completion styling
