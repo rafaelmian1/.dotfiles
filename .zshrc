@@ -29,6 +29,10 @@ zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
+zinit light jeffreytse/zsh-vi-mode
+zinit load z-shell/H-S-MW
+
+ZVM_VI_EDITOR=nvim
 
 # Add in snippets
 zinit snippet OMZP::git
@@ -67,8 +71,11 @@ setopt hist_ignore_dups
 setopt hist_find_no_dups
 
 # Aliases
-source ~/.zsh_aliases
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 [[ ! -f ~/.zsh_cdnvm ]] || source ~/.zsh_cdnvm
+[[ ! -f ~/.zsh_kubectl ]] || source ~/.zsh_kubectl
+[[ ! -f ~/.zsh_docker ]] || source ~/.zsh_docker
+[[ ! -f ~/.zsh_aws ]] || source ~/.zsh_aws
 [[ ! -f ~/.zsh_aliases_personal ]] || source ~/.zsh_aliases_personal
 
 # Completion styling
@@ -80,7 +87,8 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
 # Shell integrations
 eval "$(fzf --zsh)"
-eval "$(zoxide init --cmd cd zsh)"
+eval "$(zoxide init --cmd go zsh)"
+eval "$(direnv hook zsh)"
 
 # Neovim Remote
 if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
@@ -90,3 +98,19 @@ else
     export VISUAL="nvim"
     export EDITOR="nvim"
 fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/rafaelmian/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
+
+# pnpm
+export PNPM_HOME="/Users/rafaelmian/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

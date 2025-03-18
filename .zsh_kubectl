@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Utility function to select a resource using fzf
+_kube_select_resource() {
+    local resource_type="$1"
+    local selected_resource
+    selected_resource=$(kubectl get "$resource_type" | fzf | awk '{print $1}')
+    echo "$selected_resource"
+}
+
+# Describe a selected resource
+kubectl_describe() {
+    local resource_type="${1:-pod}"
+    local selected_resource
+    selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n "$selected_resource" ]] && kubectl describe "$resource_type" "$selected_resource"
+}
+
+# Execute a command in a selected pod
+kubectl_exec() {
+    local resource_type="${1:-pod}"
+    local selected_resource
+    local exec_command
+    
+    selected_resource=$(_kube_select_resource "$resource_type")
+    
+    if [[ -n "$selected_resource" ]]; then
+        read -p "Enter command to execute: " exec_command
+        kubectl exec "$resource_type/$selected_resource" -- $exec_command
+    fi
+}
+
+# Follow logs of a selected resource
+kubectl_logs() {
+    local resource_type="${1:-pod}"
+    local selected_resource
+    selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n "$selected_resource" ]] && kubectl logs -f "$resource_type/$selected_resource"
+}
+
+# Copy selected resource name to clipboard
+kubectl_copy() {
+    local resource_type="${1:-pod}"
+    local selected_resource
+    selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n "$selected_resource" ]] && echo "$selected_resource" | pbcopy
+}
+
+# Edit a selected resource
+kubectl_edit() {
+    local resource_type="${1:-deployment}"
+    local selected_resource
+    selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n "$selected_resource" ]] && kubectl edit "$resource_type" "$selected_resource"
+}
+
+# Search pods (or other resources) by name
+kubectl_pods() {
+    local search_term="${1:-}"
+    kubectl get pods | grep "$search_term"
+}
+
+# Clean previous aliases
+unalias k &> /dev/null
+unalias kd &> /dev/null
+unalias kcp &> /dev/null
+unalias kpods &> /dev/null
+unalias klogs &> /dev/null
+unalias kexec &> /dev/null
+unalias kedit &> /dev/null
+
+# Alias for commonly used commands
+alias k='kubectl'
+alias kd='kubectl_describe'
+alias kcp='kubectl_copy'
+alias kpods='kubectl_pods'
+alias klogs='kubectl_logs'
+alias kexec='kubectl_exec'
+alias kedit='kubectl_edit'
+

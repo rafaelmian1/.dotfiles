@@ -1,85 +1,101 @@
-return {
-  "hrsh7th/nvim-cmp",
-  version = false, -- last release is way too old
-  event = "InsertEnter",
-  dependencies = {
-    "hrsh7th/cmp-nvim-lsp",
-    "hrsh7th/cmp-buffer",
-    "hrsh7th/cmp-path",
-    {
-      "garymjr/nvim-snippets",
-      opts = { friendly_snippets = true },
-      dependencies = { "rafamadriz/friendly-snippets" },
-    },
-  },
-  -- Not all LSP servers add brackets when completing a function.
-  -- To better deal with this, LazyVim adds a custom option to cmp,
-  -- that you can configure. For example:
-  --
-  -- ```lua
-  -- opts = {
-  --   auto_brackets = { "python" }
-  -- }
-  -- ```
-  opts = function()
-    vim.api.nvim_set_hl(0, "CmpGhostText", { link = "Comment", default = true })
-    local cmp = require("cmp")
-    local defaults = require("cmp.config.default")()
-    local auto_select = true
-    return {
-      auto_brackets = {}, -- configure any filetype to auto add brackets
-      completion = {
-        completeopt = "menu,menuone,noinsert" .. (auto_select and "" or ",noselect"),
-      },
-      preselect = auto_select and cmp.PreselectMode.Item or cmp.PreselectMode.None,
-      mapping = cmp.mapping.preset.insert({
-        ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-        ["<C-f>"] = cmp.mapping.scroll_docs(4),
-        ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
-        ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
-        ["<C-a>"] = cmp.mapping.complete(),
-        ["<CR>"] = LazyVim.cmp.confirm({ select = auto_select }),
-        ["<C-y>"] = LazyVim.cmp.confirm({ select = true }),
-        ["<S-CR>"] = LazyVim.cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-        ["<C-CR>"] = function(fallback)
-          cmp.abort()
-          fallback()
-        end,
-      }),
-      sources = cmp.config.sources({
-        { name = "nvim_lsp" },
-        { name = "path" },
-      }, {
-        { name = "buffer" },
-      }),
-      formatting = {
-        format = function(entry, item)
-          local icons = LazyVim.config.icons.kinds
-          if icons[item.kind] then
-            item.kind = icons[item.kind] .. item.kind
-          end
-
-          local widths = {
-            abbr = vim.g.cmp_widths and vim.g.cmp_widths.abbr or 40,
-            menu = vim.g.cmp_widths and vim.g.cmp_widths.menu or 30,
-          }
-
-          for key, width in pairs(widths) do
-            if item[key] and vim.fn.strdisplaywidth(item[key]) > width then
-              item[key] = vim.fn.strcharpart(item[key], 0, width - 1) .. "…"
-            end
-          end
-
-          return item
-        end,
-      },
-      experimental = {
-        ghost_text = {
-          hl_group = "CmpGhostText",
-        },
-      },
-      sorting = defaults.sorting,
-    }
-  end,
-  main = "lazyvim.util.cmp",
+local M = {
+    'saghen/blink.cmp',
+    version = '*',
 }
+
+M.dependencies = {
+    'rafamadriz/friendly-snippets',
+    'brenoprata10/nvim-highlight-colors',
+    'giuxtaposition/blink-cmp-copilot',
+}
+
+M.opts = {
+    cmdline = { enabled = false },
+    keymap = {
+        preset = 'none',
+        ['<C-a>'] = { 'show', 'show_documentation', 'hide_documentation' },
+        ['<C-e>'] = { 'hide' },
+        ['<C-y>'] = { 'select_and_accept' },
+
+        ['<C-p>'] = { 'select_prev' },
+        ['<C-n>'] = { 'select_next' },
+
+        ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
+        ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
+
+        ['<C-k>'] = { 'show_signature', 'hide_signature', 'fallback' },
+    },
+    appearance = {
+        nerd_font_variant = 'mono',
+    },
+    signature = { enabled = true, window = { border = 'single' } },
+    fuzzy = { implementation = 'prefer_rust_with_warning' },
+    sources = {
+        -- default = { 'lsp', 'path', 'snippets', 'buffer' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
+        providers = {
+            copilot = {
+                name = 'copilot',
+                module = 'blink-cmp-copilot',
+                score_offset = 100,
+                async = true,
+            },
+        },
+    },
+    completion = {
+        -- 'prefix' will fuzzy match on the text before the cursor
+        -- 'full' will fuzzy match on the text before _and_ after the cursor
+        -- example: 'foo_|_bar' will match 'foo_' for 'prefix' and 'foo__bar' for 'full'
+        keyword = { range = 'full' },
+
+        -- Disable auto brackets
+        -- NOTE: some LSPs may add auto brackets themselves anyway
+        accept = { auto_brackets = { enabled = false } },
+
+        -- Don't select by default, auto insert on selection
+        list = { selection = { preselect = false, auto_insert = true } },
+
+        menu = {
+            border = 'single',
+
+            -- Don't automatically show the completion menu
+            auto_show = false,
+
+            -- nvim-cmp style menu
+            draw = {
+                columns = {
+                    { 'kind_icon' },
+                    { 'label', 'label_description', gap = 1 },
+                },
+            },
+            -- avoid menu and ghost text overlap
+            direction_priority = function()
+                local ctx = require('blink.cmp').get_context()
+                local item = require('blink.cmp').get_selected_item()
+                if ctx == nil or item == nil then
+                    return { 's', 'n' }
+                end
+
+                local item_text = item.textEdit ~= nil and item.textEdit.newText or item.insertText or item.label
+                local is_multi_line = item_text:find '\n' ~= nil
+
+                -- after showing the menu upwards, we want to maintain that direction
+                -- until we re-open the menu, so store the context id in a global variable
+                if is_multi_line or vim.g.blink_cmp_upwards_ctx_id == ctx.id then
+                    vim.g.blink_cmp_upwards_ctx_id = ctx.id
+                    return { 'n', 's' }
+                end
+                return { 's', 'n' }
+            end,
+        },
+
+        -- Show documentation when selecting a completion item
+        documentation = {
+            window = { border = 'single' },
+        },
+        -- Display a preview of the selected item on the current line
+        ghost_text = { enabled = true },
+    },
+}
+
+return M

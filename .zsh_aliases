@@ -14,33 +14,16 @@ alias aliases='vim ~/.dotfiles/.zsh_aliases'
 alias tbaliases='vim ~/.dotfiles/tkww/.zsh_aliases'
 alias soaliases='source ~/.zsh_aliases'
 
-## Kubectl
-alias k='kubectl'
-kdesc(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl describe $1 {}}
-alias kd='kdesc'
-kexec(){
-  pod="$(kubectl get $1 | fzf | awk '{print $1}')"
-  read exec_command
-  kubectl exec $1/$pod -- $exec_command
-}
-alias ke='kexec'
-klog(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl logs -f $1/{}}
-alias klogs='klog'
-kcopy(){kubectl get $1 | fzf | awk '{print $1}' | pbcopy}
-alias kcp='kcopy'
-keditt(){kubectl get $1 | fzf | awk '{print $1}' | xargs -I {} kubectl edit $1 {}}
-alias kedit='keditt'
-pods(){kubectl get pods | grep $1} 
-alias kpods='pods'
-
 ## Utils
+alias ..='cd ..'
 alias c='clear'
 alias e='exit'
 list(){eza -la --group-directories-first --icons $1}
 alias ls='list'
 alias t='tmux'
-alias tn='(){tmux new -s $1}'
-alias ta='(){tmux attach -t $1}'
+alias lz='lazygit'
+alias tn='tmux new -s'
+alias ta='tmux attach -t'
 
 ## Git
 alias gs='git status -s'
@@ -49,3 +32,9 @@ alias gc='(){git commit -m $1}'
 alias gcd='git checkout development'
 alias gcp='git checkout production'
 alias gcq='git checkout qa'
+
+## Terraform
+alias tf='terraform'
+
+## Pnpm
+alias pn='pnpm'

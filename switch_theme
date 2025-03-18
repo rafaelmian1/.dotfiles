@@ -1,11 +1,20 @@
 #!/bin/bash
-KITTY="/Applications/kitty.app/Contents/MacOS/kitty"
-SOCKET="$(ls /tmp/kitty*)"
-
 if [ "$DARKMODE" = "1" ]; then
-  cp ~/.config/kitty/rose-pine-main.conf ~/.config/kitty/current-theme.conf
+  cp ~/.config/kitty/rose-pine-moon.conf ~/.config/kitty/current-theme.conf
+  sed -i '' 's/delta --light/delta --dark/g' ~/Library/Application\ Support/lazygit/config.yml
 else
   cp ~/.config/kitty/rose-pine-dawn.conf ~/.config/kitty/current-theme.conf
+  sed -i '' 's/delta --dark/delta --light/g' ~/Library/Application\ Support/lazygit/config.yml
 fi
 
-$KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/current-theme.conf"
+KITTY="/Applications/kitty.app/Contents/MacOS/kitty"
+
+# Clean up stale sockets
+for SOCKET in /tmp/kitty*; do
+  [ -S "$SOCKET" ] && ! lsof "$SOCKET" 2>&1 | grep -q kitty && rm "$SOCKET"
+done
+
+# Update all active kitty instances
+for SOCKET in /tmp/kitty*; do
+  [ -S "$SOCKET" ] && $KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/current-theme.conf"
+done
