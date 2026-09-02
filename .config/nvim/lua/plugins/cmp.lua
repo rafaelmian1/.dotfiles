@@ -6,7 +6,7 @@ local M = {
 M.dependencies = {
     'rafamadriz/friendly-snippets',
     'brenoprata10/nvim-highlight-colors',
-    'giuxtaposition/blink-cmp-copilot',
+    -- 'giuxtaposition/blink-cmp-copilot',
 }
 
 M.opts = {
@@ -31,16 +31,16 @@ M.opts = {
     signature = { enabled = true, window = { border = 'single' } },
     fuzzy = { implementation = 'prefer_rust_with_warning' },
     sources = {
-        -- default = { 'lsp', 'path', 'snippets', 'buffer' },
-        default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
-        providers = {
-            copilot = {
-                name = 'copilot',
-                module = 'blink-cmp-copilot',
-                score_offset = 100,
-                async = true,
-            },
-        },
+        default = { 'lsp', 'path', 'snippets', 'buffer' },
+        -- default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
+        -- providers = {
+        --     copilot = {
+        --         name = 'copilot',
+        --         module = 'blink-cmp-copilot',
+        --         score_offset = 100,
+        --         async = true,
+        --     },
+        -- },
     },
     completion = {
         -- 'prefix' will fuzzy match on the text before the cursor

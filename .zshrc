@@ -103,7 +103,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export DISABLE_AUTO_TITLE='true'
 
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/rafaelmian/.docker/completions $fpath)
+fpath=($HOME/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions

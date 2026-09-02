@@ -3,3 +3,7 @@ punto
 .log
 .config/tmux/plugins
 **/.DS_Store
+
+# theme-set writes the active powerline theme link here
+.config/tmux-powerline/themes/current.sh
+.config/tmux/current-theme.conf

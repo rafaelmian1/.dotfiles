@@ -1,0 +1,30 @@
+gui:
+  theme:
+    activeBorderColor:
+      - "#7daea3"
+      - bold
+    inactiveBorderColor:
+      - "#7c6f64"
+    searchingActiveBorderColor:
+      - "#d8a657"
+      - bold
+    optionsTextColor:
+      - "#89b482"
+    selectedLineBgColor:
+      - "#45403d"
+    inactiveViewSelectedLineBgColor:
+      - "#32302f"
+    defaultFgColor:
+      - "#d4be98"
+    cherryPickedCommitBgColor:
+      - "#45403d"
+    cherryPickedCommitFgColor:
+      - "#d3869b"
+    unstagedChangesColor:
+      - "#ea6962"
+git:
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
+os:
+  edit: "nvr -cc vsplit --remote-wait +'set bufhidden=wipe' {{filename}}"
