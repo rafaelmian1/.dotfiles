@@ -7,6 +7,7 @@ M.dependencies = {
     'nvim-treesitter/nvim-treesitter',
     'nvim-neotest/neotest-jest',
     'marilari88/neotest-vitest',
+    'nvim-neotest/neotest-python',
 }
 
 M.opts = {
@@ -24,6 +25,7 @@ M.opts = {
     adapters = {
         ['neotest-jest'] = {},
         ['neotest-vitest'] = {},
+        ['neotest-python'] = { runner = 'pytest', dap = { justMyCode = false } },
         ['rustaceanvim.neotest'] = {},
     },
     status = { virtual_text = true },

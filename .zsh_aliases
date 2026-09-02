@@ -1,3 +1,6 @@
+# Shared aliases & helpers — safe on every machine.
+# Machine-specific ones go in ~/.dotfiles/personal/.zshrc or ~/.dotfiles/tkww/.zshrc
+
 ## Vim
 alias vim='nvim'
 alias cdv='(){vim "$1" -c "cd $1"}'
@@ -8,17 +11,17 @@ alias icloud='cd ~/Library/Mobile\ Documents/com\~apple\~CloudDocs'
 alias dotfiles='cdv ~/.dotfiles'
 alias vimc='cdv ~/.config/nvim'
 alias z='vim ~/.dotfiles/.zshrc'
-alias tkz='vim ~/.dotfiles/tkww/.zshrc'
+alias zp='vim ~/.dotfiles/.zprofile'
 alias soz='source ~/.zshrc'
 alias aliases='vim ~/.dotfiles/.zsh_aliases'
-alias tbaliases='vim ~/.dotfiles/tkww/.zsh_aliases'
 alias soaliases='source ~/.zsh_aliases'
+alias pz='vim ~/.dotfiles/personal/.zshrc'
 
 ## Utils
 alias ..='cd ..'
 alias c='clear'
 alias e='exit'
-alias ls='eza -la --group-directories-first --icons $1'
+alias ls='eza -la --group-directories-first --icons=auto'
 alias t='tmux'
 alias lz='lazygit'
 alias tn='tmux new -s'
@@ -38,5 +41,107 @@ alias gcq='git checkout qa'
 ## Terraform
 alias tf='terraform'
 
-## Pnpm
+## Node
 alias pn='pnpm'
+
+## Docker
+alias dup='docker compose up -d'
+
+## AWS / S3
+alias s3='aws s3'
+
+_s3_select_bucket() {
+    aws s3 ls | awk '{print $3}' | fzf --prompt="${1:-Select S3 bucket: }" --height 40% --preview "aws s3 ls {}"
+}
+
+# List S3 buckets with fzf
+alias s3ls='_s3_select_bucket'
+
+# Download a file from a selected bucket
+s3download() {
+    local bucket=$(_s3_select_bucket)
+    [[ -z $bucket ]] && return
+    local file=$(aws s3 ls "s3://$bucket" | awk '{print $4}' | fzf --prompt="Select file to download: " --height 40% --preview "aws s3 cp s3://$bucket/{} -")
+    [[ -n $file ]] && aws s3 cp "s3://$bucket/$file" .
+}
+alias s3down='s3download'
+
+# Upload a local file to a selected bucket (extra args go to `aws s3 cp`)
+s3upload() {
+    local bucket=$(_s3_select_bucket "Select destination bucket: ")
+    [[ -z $bucket ]] && return
+    local file=$(eza | fzf --prompt="Select file to upload: " --height 40% --preview "cat {}")
+    [[ -n $file ]] && aws s3 cp "$file" "s3://$bucket/" "$@"
+}
+alias s3up='s3upload'
+alias s3upp='s3upload --acl public-read'
+
+## Kubernetes
+# The OMZ kubectl snippet defines some of these names as aliases; drop them so ours win.
+unalias k kd kcp kpods klogs kexec kedit &> /dev/null
+
+# `k` is a function (not an alias) so the helpers below pick up overlay overrides at
+# call time, e.g. in tkww/.zshrc:  k() { AWS_PROFILE=my-profile kubectl "$@" }
+k() { kubectl "$@" }
+
+# Select a resource using fzf
+_kube_select_resource() {
+    k get "$1" | fzf | awk '{print $1}'
+}
+
+# Describe a selected resource
+kubectl_describe() {
+    local resource_type="${1:-pod}"
+    local selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n $selected_resource ]] && k describe "$resource_type" "$selected_resource"
+}
+
+# Execute a command in a selected pod
+kubectl_exec() {
+    local resource_type="${1:-pod}"
+    local selected_resource=$(_kube_select_resource "$resource_type")
+    local exec_command
+
+    if [[ -n $selected_resource ]]; then
+        read "exec_command?Enter command to execute: "
+        k exec "$resource_type/$selected_resource" -- ${=exec_command}
+    fi
+}
+
+# Follow logs of a selected resource
+kubectl_logs() {
+    local resource_type="${1:-pod}"
+    local selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n $selected_resource ]] && k logs -f "$resource_type/$selected_resource"
+}
+
+# Copy selected resource name to clipboard
+kubectl_copy() {
+    local resource_type="${1:-pod}"
+    local selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n $selected_resource ]] && echo "$selected_resource" | pbcopy
+}
+
+# Edit a selected resource
+kubectl_edit() {
+    local resource_type="${1:-deployment}"
+    local selected_resource=$(_kube_select_resource "$resource_type")
+    [[ -n $selected_resource ]] && k edit "$resource_type" "$selected_resource"
+}
+
+# Search pods by name
+kubectl_pods() {
+    k get pods | grep "$1"
+}
+
+alias kd='kubectl_describe'
+alias kcp='kubectl_copy'
+alias kpods='kubectl_pods'
+alias klogs='kubectl_logs'
+alias kexec='kubectl_exec'
+alias kedit='kubectl_edit'
+alias kns='kubens'
+alias kctx='kubectx'
+
+alias fgk='flux get kustomizations'
+alias frk='flux reconcile kustomization'

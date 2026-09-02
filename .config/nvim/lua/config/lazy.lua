@@ -20,7 +20,7 @@ require('lazy').setup {
     spec = { import = 'plugins' },
     -- Configure any other settings here. See the documentation for more details.
     -- colorscheme that will be used when installing plugins.
-    install = { colorscheme = { 'rose-pine' } },
+    install = { colorscheme = { require('config.theme').env().THEME_NVIM_COLORSCHEME or 'default' } },
     -- automatically check for plugin updates
     checker = { enabled = true, notify = false },
 }

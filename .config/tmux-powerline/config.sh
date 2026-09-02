@@ -10,7 +10,9 @@ export TMUX_POWERLINE_DEBUG_MODE_ENABLED="false"
 export TMUX_POWERLINE_PATCHED_FONT_IN_USE="true"
 
 # The theme to use.
-export TMUX_POWERLINE_THEME="ayu"
+# theme-set symlinks themes/<active>/tmux-powerline.sh to
+# themes/current.sh, so this never needs editing when the theme changes.
+export TMUX_POWERLINE_THEME="current"
 # Overlay directory to look for themes. There you can put your own themes outside the repo. Fallback will still be the "themes" directory in the repo.
 export TMUX_POWERLINE_DIR_USER_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-powerline/themes"
 # Overlay directory to look for segments. There you can put your own segments outside the repo. Fallback will still be the "segments" directory in the repo.
@@ -200,7 +202,7 @@ export TMUX_POWERLINE_SEG_MAILCOUNT_GMAIL_INTERVAL="5"
 
 ## Maildir
 # Path to the maildir to check.
-export TMUX_POWERLINE_SEG_MAILCOUNT_MAILDIR_INBOX="/Users/rmian/.mail/inbox/new"
+export TMUX_POWERLINE_SEG_MAILCOUNT_MAILDIR_INBOX="$HOME/.mail/inbox/new"
 
 ## mbox
 # Path to the mbox to check.
@@ -208,7 +210,7 @@ export TMUX_POWERLINE_SEG_MAILCOUNT_MBOX_INBOX=""
 
 ## mailcheck
 # Optional path to mailcheckrc
-export TMUX_POWERLINE_SEG_MAILCOUNT_MAILCHECKRC="/Users/rmian/.mailcheckrc"
+export TMUX_POWERLINE_SEG_MAILCOUNT_MAILCHECKRC="$HOME/.mailcheckrc"
 # }
 
 # mode_indicator.sh {
@@ -255,7 +257,7 @@ export TMUX_POWERLINE_SEG_NOW_PLAYING_ROLL_SPEED="2"
 # If set to 'true', 'yes', 'on' or '1', played tracks will be logged to a file.
 # export TMUX_POWERLINE_SEG_NOW_PLAYING_TRACK_LOG_ENABLE="false"
 # If enabled, log played tracks to the following file:
-# export TMUX_POWERLINE_SEG_NOW_PLAYING_TRACK_LOG_FILEPATH="/Users/rmian/.now_playing.log"
+# export TMUX_POWERLINE_SEG_NOW_PLAYING_TRACK_LOG_FILEPATH="$HOME/.now_playing.log"
 # Maximum number of logged song entries. Set to "unlimited" for unlimited entries.
 # export TMUX_POWERLINE_SEG_NOW_PLAYING_TRACK_LOG_MAX_ENTRIES="100"
 

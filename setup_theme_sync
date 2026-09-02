@@ -1,37 +1,68 @@
 #!/bin/bash
+# macOS: re-apply the current theme whenever the system switches light/dark.
+#
+# Installs a LaunchAgent that runs `dark-notify -c switch_theme` at login.
+# dark-notify (from the Brewfile) calls switch_theme once at startup and again
+# on every appearance change; switch_theme runs `theme-set --reload`.
+#
+# Safe to re-run: the agent is unloaded and reloaded with the current paths.
 
-brew install make
-brew install cormacrelf/tap/dark-notify
+set -euo pipefail
 
-git clone git@github.com:bouk/dark-mode-notify.git /tmp/dark-mode-notify
+[[ $(uname -s) == Darwin ]] || { echo "setup_theme_sync: macOS only" >&2; exit 1; }
 
-cd /tmp/dark-mode-notify
+DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
+LABEL="dotfiles.theme-sync"
+AGENTS="$HOME/Library/LaunchAgents"
+PLIST="$AGENTS/$LABEL.plist"
+LOG_DIR="$DOTFILES/.log"
+DOMAIN="gui/$(id -u)"
 
-make install
+DARK_NOTIFY="$(command -v dark-notify || true)"
+if [[ -z $DARK_NOTIFY ]]; then
+  echo "dark-notify not found; run: brew bundle --file $DOTFILES/Brewfile" >&2
+  exit 1
+fi
 
-sudo mv .build/release/dark-mode-notify /usr/local/bin/dark-mode-notify
+# Remove the previous agent (bouk/dark-mode-notify built from source).
+OLD_PLIST="$AGENTS/dark-mode-notify.plist"
+if [[ -e $OLD_PLIST ]]; then
+  launchctl bootout "$DOMAIN" "$OLD_PLIST" 2>/dev/null || true
+  rm -f "$OLD_PLIST"
+  echo "Removed old dark-mode-notify agent."
+  [[ -e /usr/local/bin/dark-mode-notify ]] &&
+    echo "Its binary is no longer used: sudo rm /usr/local/bin/dark-mode-notify"
+fi
 
-rm -rf /tmp/dark-mode-notify
+mkdir -p "$AGENTS" "$LOG_DIR"
 
-echo "<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+cat >"$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>dark-mode-notify</string>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardErrorPath</key>
-    <string>$HOME/.dotfiles/.log/dark-mode-notify-stderr.log</string>
-    <key>StandardOutPath</key>
-    <string>$HOME/.dotfiles/.log/dark-mode-notify-stdout.log</string>
+    <string>$LABEL</string>
     <key>ProgramArguments</key>
     <array>
-       <string>/usr/local/bin/dark-mode-notify</string>
-       <string>$HOME/.dotfiles/switch_theme</string>
+        <string>$DARK_NOTIFY</string>
+        <string>-c</string>
+        <string>$DOTFILES/switch_theme</string>
     </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/theme-sync.log</string>
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/theme-sync.log</string>
 </dict>
-</plist>" >~/Library/LaunchAgents/dark-mode-notify.plist
+</plist>
+EOF
+plutil -lint -s "$PLIST"
 
-launchctl load -w ~/Library/LaunchAgents/dark-mode-notify.plist
+launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+launchctl bootstrap "$DOMAIN" "$PLIST"
+
+echo "Theme sync installed ($LABEL). Logs: $LOG_DIR/theme-sync.log"

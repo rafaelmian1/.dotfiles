@@ -1,68 +1,32 @@
--- Rose-pine Colorscheme
+-- Colorschemes.
+--
+-- Every theme's plugin is declared so it is installed and available, but
+-- only the active one loads at startup; the rest stay lazy until something
+-- asks for them (switching theme with <leader>uc, or dark-notify swapping
+-- between a theme's light and dark variants).
+--
+-- The active theme is whatever ~/.theme contains, written by theme-set.
 
-local M = {
-    'rose-pine/neovim',
-    name = 'rose-pine',
-    priority = 10000,
-    lazy = false,
-}
+local theme = require 'config.theme'
+local active = theme.name()
 
-M.opts = {
-    variant = 'auto', -- Options: 'auto', 'main', 'moon', or 'dawn'
-    bold_vert_split = false,
-    dim_nc_background = false,
-    disable_background = false,
-    disable_float_background = false,
-    disable_italics = true,
+local specs = {}
 
-    -- Highlight groups to override
-    groups = {
-        -- background = "#232136",
-        -- panel = "#2a273f",
-        -- border = '#44415a',
-        -- comment = '#6e6a86',
-        -- link = '#c4a7e7',
-        -- punctuation = '#908caa',
-    },
+for _, name in ipairs(theme.list()) do
+    local ok, spec = pcall(dofile, theme.dir(name) .. '/colorscheme.lua')
+    if ok then
+        -- Only the active theme loads eagerly and applies itself; the others
+        -- are installed but idle, so switching does not have to fetch them.
+        if name ~= active then
+            spec.lazy = true
+            spec.priority = nil
+            spec.config = spec.config or true
+            spec.dependencies = nil
+        end
+        table.insert(specs, spec)
+    else
+        vim.notify('Theme "' .. name .. '" failed to load: ' .. tostring(spec), vim.log.levels.WARN)
+    end
+end
 
-    -- Explicit highlight overrides. `gold`/`rose` are warm accents that stay
-    -- legible against the cool blues/greens of a Patagonia mountain-and-lake
-    -- wallpaper showing through the transparent background.
-    highlight_groups = {
-        -- Selection: a warm, opaque block so it pops against the wallpaper
-        Visual = { fg = 'base', bg = 'gold', inherit = false },
-        VisualNOS = { fg = 'base', bg = 'gold', inherit = false },
-
-        -- Telescope: rose/gold borders and a solid panel so popups read
-        -- clearly over the transparent, wallpaper-tinted background
-        TelescopeNormal = { bg = 'surface' },
-        TelescopeBorder = { fg = 'gold', bg = 'surface' },
-        TelescopePromptNormal = { bg = 'overlay' },
-        TelescopePromptBorder = { fg = 'rose', bg = 'overlay' },
-        TelescopePreviewBorder = { fg = 'gold', bg = 'surface' },
-        TelescopeResultsBorder = { fg = 'gold', bg = 'surface' },
-        TelescopeSelection = { bg = 'highlight_med' },
-        TelescopeMatching = { fg = 'gold', bold = true },
-
-        -- lazygit.nvim links these to Normal by default, which makes the
-        -- terminal float paint an opaque background.
-        LazyGitFloat = { bg = 'NONE' },
-        LazyGitBorder = { fg = 'gold', bg = 'NONE' },
-    },
-}
-
-M.dependencies = {
-    {
-        'cormacrelf/dark-notify',
-        config = function()
-            require('dark_notify').run {
-                schemes = {
-                    dark = 'rose-pine-moon',
-                    light = 'rose-pine-dawn',
-                },
-            }
-        end,
-    },
-}
-
-return M
+return specs

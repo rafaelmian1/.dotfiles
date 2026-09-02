@@ -104,3 +104,8 @@ map('n', '<Leader>db', "<cmd>lua require'dap'.toggle_breakpoint()<CR>", { desc =
 map('n', '<Leader>dd', "<cmd>lua require'dap'.set_breakpoint(vim.fn.input('Breakpoint condition: '))<CR>", { desc = 'Debugger set conditional breakpoint' })
 map('n', '<Leader>de', "<cmd>lua require'dap'.terminate()<CR>", { desc = 'Debugger reset' })
 map('n', '<Leader>dr', "<cmd>lua require'dap'.run_last()<CR>", { desc = 'Debugger run last' })
+
+-- Colour theme: pick one and switch kitty, tmux, k9s and lazygit with it
+map('n', '<leader>uc', function()
+    require('config.theme').pick()
+end, { desc = 'Choose [U]I [C]olour theme' })

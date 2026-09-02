@@ -6,7 +6,7 @@ local M = {
 M.dependencies = {
     'rafamadriz/friendly-snippets',
     'brenoprata10/nvim-highlight-colors',
-    'giuxtaposition/blink-cmp-copilot',
+    'fang2hou/blink-copilot',
 }
 
 M.opts = {
@@ -15,7 +15,15 @@ M.opts = {
         preset = 'none',
         ['<C-a>'] = { 'show', 'show_documentation', 'hide_documentation' },
         ['<C-e>'] = { 'hide' },
-        ['<C-y>'] = { 'select_and_accept' },
+        -- Accept completion item; otherwise apply a pending Copilot next edit suggestion
+        ['<C-y>'] = {
+            'select_and_accept',
+            function()
+                local ok, sidekick = pcall(require, 'sidekick')
+                return ok and sidekick.nes_jump_or_apply()
+            end,
+            'fallback',
+        },
 
         ['<C-p>'] = { 'select_prev' },
         ['<C-n>'] = { 'select_next' },
@@ -31,12 +39,11 @@ M.opts = {
     signature = { enabled = true, window = { border = 'single' } },
     fuzzy = { implementation = 'prefer_rust_with_warning' },
     sources = {
-        -- default = { 'lsp', 'path', 'snippets', 'buffer' },
         default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
         providers = {
             copilot = {
                 name = 'copilot',
-                module = 'blink-cmp-copilot',
+                module = 'blink-copilot',
                 score_offset = 100,
                 async = true,
             },

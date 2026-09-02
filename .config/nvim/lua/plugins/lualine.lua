@@ -5,10 +5,11 @@ M.dependencies = { 'nvim-tree/nvim-web-devicons' }
 M.config = function()
     local lualine = require 'lualine'
     local lazy_status = require 'lazy.status'
+    local env = require('config.theme').env()
 
     lualine.setup {
         options = {
-            theme = 'auto',
+            theme = env.THEME_LUALINE or 'auto',
         },
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },

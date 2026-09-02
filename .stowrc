@@ -1,2 +1,13 @@
---override='\.zshrc|\.zsh_aliases'
+--override='\.zshrc|\.zsh_aliases|\.zshenv'
 --ignore=.stowrc
+--ignore=personal
+--ignore=tkww
+--ignore=\.DS_Store
+--ignore=k9s
+--ignore=raycast
+--ignore=theme-generator
+--ignore=theme-set
+--ignore=themes
+--ignore=tmux_session
+--ignore=Brewfile.*
+--ignore=bootstrap\.sh

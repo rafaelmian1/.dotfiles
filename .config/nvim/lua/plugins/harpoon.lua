@@ -6,7 +6,23 @@ local M = {
 M.dependencies = { 'nvim-lua/plenary.nvim' }
 
 M.config = function()
-    local harpoon = require('harpoon'):setup()
+    -- harpoon loads files via vim.fn.bufload(), which raises E325 when another nvim
+    -- instance has the file open (bypassing nvim's default "ignore swap from running
+    -- nvim" handler). Suppress the swap ATTENTION prompt while selecting.
+    local default_select = require('harpoon.config').get_default_config().default.select
+    local harpoon = require('harpoon'):setup {
+        default = {
+            select = function(...)
+                local shortmess = vim.o.shortmess
+                vim.opt.shortmess:append 'A'
+                local ok, err = pcall(default_select, ...)
+                vim.o.shortmess = shortmess
+                if not ok then
+                    vim.notify(tostring(err), vim.log.levels.ERROR)
+                end
+            end,
+        },
+    }
 
     vim.keymap.set('n', ';a', function()
         harpoon:list():add()

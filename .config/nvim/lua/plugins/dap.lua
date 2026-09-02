@@ -27,4 +27,15 @@ return {
             require('dapui').setup()
         end,
     },
+    {
+        'mfussenegger/nvim-dap-python',
+        ft = 'python',
+        dependencies = { 'mfussenegger/nvim-dap' },
+        config = function()
+            -- Uses the project's venv python (via $VIRTUAL_ENV/.venv) for the debuggee,
+            -- debugpy itself comes from mason
+            require('dap-python').setup(vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python')
+            require('dap-python').test_runner = 'pytest'
+        end,
+    },
 }
