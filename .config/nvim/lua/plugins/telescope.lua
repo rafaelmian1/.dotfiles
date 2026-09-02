@@ -78,7 +78,9 @@ M.config = function()
                         vim.cmd.cd(selection.path)
                     end,
                     after_action = function(selection)
+                        vim.cmd '%bd!'
                         tree.tree.change_root(selection.path)
+                        tree.tree.focus()
                     end,
                 },
             },

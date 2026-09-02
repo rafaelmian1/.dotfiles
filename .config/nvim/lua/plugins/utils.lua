@@ -71,6 +71,7 @@ M.plugins = {
                 { '<leader>w', group = '[W]orkspace' },
                 { '<leader>t', group = '[T]oggle' },
                 { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+                { '<leader>i', group = '[I] AI', mode = { 'n', 'x' } },
             },
         },
     },
@@ -131,7 +132,7 @@ M.plugins = {
     },
     {
         'MeanderingProgrammer/render-markdown.nvim',
-        ft = { 'markdown', 'codecompanion' },
+        ft = { 'markdown' },
         opts = {
             render_modes = true,
             sign = { enabled = false },

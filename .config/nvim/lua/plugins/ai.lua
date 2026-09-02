@@ -1,94 +1,54 @@
-local M = {}
+local function nes_apply()
+    return require('sidekick').nes_jump_or_apply()
+end
 
-M.plugins = {
+return {
     {
+        -- Copilot backend (copilot-language-server). Auth via `:Copilot auth`.
+        -- Ghost text/panel disabled: completions go through blink.cmp (blink-copilot),
+        -- next edit suggestions through sidekick.nvim.
         'zbirenbaum/copilot.lua',
-        dependencies = {
-            'copilotlsp-nvim/copilot-lsp',
-        },
+        cmd = 'Copilot',
+        event = { 'InsertEnter', 'BufReadPost' },
         opts = {
             suggestion = { enabled = false },
             panel = { enabled = false },
+            filetypes = {
+                markdown = true,
+                yaml = true,
+                gitcommit = true,
+            },
         },
-        cmd = 'Copilot',
-        event = 'InsertEnter',
     },
     {
-        'olimorris/codecompanion.nvim',
-        dependencies = {
-            'nvim-lua/plenary.nvim',
-            'nvim-treesitter/nvim-treesitter',
-        },
+        -- Copilot Next Edit Suggestions + AI CLI terminals (claude, copilot, codex, gemini, ...)
+        'folke/sidekick.nvim',
+        event = 'VeryLazy',
         opts = {
-            adapters = {
-                http = {
-                    copilot = function()
-                        return require('codecompanion.adapters').extend('copilot', {
-                            schema = {
-                                model = {
-                                    default = 'claude-sonnet-4.6',
-                                    choices = {
-                                        'claude-sonnet-4.6', -- Best for agentic coding, 1x premium
-                                        'claude-opus-4.6', -- Deep reasoning, complex architecture
-                                        'claude-opus-4-6-fast', -- Opus quality, lower latency (preview)
-                                        'claude-sonnet-4.5', -- Solid all-rounder
-                                        'claude-haiku-4.5', -- Fast & cheap
-                                    },
-                                },
-                            },
-                        })
-                    end,
-
-                    copilot_cheap = function()
-                        return require('codecompanion.adapters').extend('copilot', {
-                            schema = {
-                                model = {
-                                    default = 'claude-haiku-4.5',
-                                },
-                            },
-                        })
-                    end,
-                },
+            cli = {
+                mux = { backend = 'tmux', enabled = vim.env.TMUX ~= nil },
             },
-
-            interactions = {
-                chat = {
-                    adapter = {
-                        name = 'copilot',
-                        model = 'claude-sonnet-4.6', -- Latest, excels at agentic coding & search
-                    },
-                },
-                inline = {
-                    adapter = {
-                        name = 'copilot',
-                        model = 'claude-sonnet-4.6', -- Same model, fast enough for inline
-                    },
-                },
-                cmd = {
-                    adapter = {
-                        name = 'copilot',
-                        model = 'claude-haiku-4.5', -- Vim commands don't need big models
-                    },
-                },
-                background = {
-                    adapter = {
-                        name = 'copilot_cheap',
-                    },
-                },
+        },
+        keys = {
+            {
+                '<C-y>',
+                function()
+                    if not nes_apply() then
+                        vim.api.nvim_feedkeys(vim.keycode '<C-y>', 'n', false)
+                    end
+                end,
+                desc = 'Goto/Apply Next Edit Suggestion',
             },
-
-            display = {
-                diff = {
-                    enabled = true,
-                    provider = 'inline',
-                },
-            },
-
-            opts = {
-                log_level = 'ERROR',
-            },
+            -- stylua: ignore start
+            { '<C-.>', function() require('sidekick.cli').toggle() end, mode = { 'n', 't', 'i', 'x' }, desc = 'Sidekick Toggle CLI' },
+            { '<leader>ia', function() require('sidekick.cli').toggle() end, desc = 'Sidekick Toggle CLI' },
+            { '<leader>is', function() require('sidekick.cli').select() end, desc = 'Sidekick Select CLI' },
+            { '<leader>id', function() require('sidekick.cli').close() end, desc = 'Sidekick Detach CLI' },
+            { '<leader>it', function() require('sidekick.cli').send { msg = '{this}' } end, mode = { 'n', 'x' }, desc = 'Sidekick Send This' },
+            { '<leader>if', function() require('sidekick.cli').send { msg = '{file}' } end, desc = 'Sidekick Send File' },
+            { '<leader>iv', function() require('sidekick.cli').send { msg = '{selection}' } end, mode = 'x', desc = 'Sidekick Send Selection' },
+            { '<leader>ip', function() require('sidekick.cli').prompt() end, mode = { 'n', 'x' }, desc = 'Sidekick Select Prompt' },
+            -- stylua: ignore end
         },
     },
 }
-
-return M.plugins

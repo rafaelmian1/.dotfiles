@@ -243,8 +243,45 @@ M.plugins = {
             local servers = {
                 -- clangd = {},
                 -- gopls = {},
-                -- pyright = {},
-                rust_analyzer = {},
+                -- Python: basedpyright for types/navigation, ruff for lint/format/import sorting
+                basedpyright = {
+                    settings = {
+                        basedpyright = {
+                            -- ruff handles import organizing
+                            disableOrganizeImports = true,
+                            analysis = {
+                                typeCheckingMode = 'standard',
+                                autoImportCompletions = true,
+                                diagnosticMode = 'openFilesOnly',
+                                inlayHints = { callArgumentNames = true },
+                            },
+                        },
+                    },
+                    -- Use the project's virtualenv ($VIRTUAL_ENV, ./.venv or ./venv)
+                    before_init = function(_, config)
+                        local root = config.root_dir or vim.fn.getcwd()
+                        local venv = vim.env.VIRTUAL_ENV
+                        if not venv then
+                            for _, name in ipairs { '.venv', 'venv' } do
+                                if vim.fn.isdirectory(root .. '/' .. name) == 1 then
+                                    venv = root .. '/' .. name
+                                    break
+                                end
+                            end
+                        end
+                        if venv and vim.fn.executable(venv .. '/bin/python') == 1 then
+                            config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
+                                pythonPath = venv .. '/bin/python',
+                            })
+                        end
+                    end,
+                },
+                ruff = {
+                    on_attach = function(client)
+                        -- Leave hover to basedpyright
+                        client.server_capabilities.hoverProvider = false
+                    end,
+                },
                 -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
                 --
                 -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -283,24 +320,22 @@ M.plugins = {
             local ensure_installed = vim.tbl_keys(servers or {})
             vim.list_extend(ensure_installed, {
                 'stylua', -- Used to format Lua code
+                'debugpy', -- Python debug adapter (nvim-dap-python)
                 'prettier', -- Used to format JS/TS/JSX/TSX code
                 'xcode-build-server',
             })
             require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+            -- Native (nvim 0.11+) LSP config: blink.cmp capabilities are applied to '*' by blink itself.
+            for server_name, server in pairs(servers) do
+                vim.lsp.config(server_name, server)
+            end
+
+            -- mason-lspconfig v2 auto-enables installed servers via vim.lsp.enable().
+            -- rust_analyzer is managed by rustaceanvim, so never enable it here.
             require('mason-lspconfig').setup {
-                ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-                automatic_installation = false,
-                handlers = {
-                    function(server_name)
-                        local server = servers[server_name] or {}
-                        -- This handles overriding only values explicitly passed
-                        -- by the server configuration above. Useful when disabling
-                        -- certain features of an LSP (for example, turning off formatting for ts_ls)
-                        server.capabilities = require('blink.cmp').get_lsp_capabilities(server.capabilities)
-                        require('lspconfig')[server_name].setup(server)
-                    end,
-                },
+                ensure_installed = {},
+                automatic_enable = { exclude = { 'rust_analyzer' } },
             }
         end,
     },

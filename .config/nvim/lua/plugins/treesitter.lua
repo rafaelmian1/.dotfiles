@@ -24,6 +24,7 @@ M.opts = {
         'luadoc',
         'vim',
         'vimdoc',
+        'python',
         'rust',
         'groovy',
         'yaml',

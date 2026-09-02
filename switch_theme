@@ -1,24 +1,6 @@
 #!/bin/bash
-if [ "$DARKMODE" = "1" ]; then
-  cp ~/.config/kitty/rose-pine-moon.conf ~/.config/kitty/current-theme.conf
-  cp ~/.dotfiles/k9s/rose-pine-moon.yaml ~/Library/Application\ Support/k9s/skins/rose-pine.yaml
-  sed -i '' 's/delta --light/delta --dark/g' ~/Library/Application\ Support/lazygit/config.yml
-else
-  cp ~/.config/kitty/rose-pine-dawn.conf ~/.config/kitty/current-theme.conf
-  cp ~/.dotfiles/k9s/rose-pine-dawn.yaml ~/Library/Application\ Support/k9s/skins/rose-pine.yaml
-  sed -i '' 's/delta --dark/delta --light/g' ~/Library/Application\ Support/lazygit/config.yml
-fi
+# Invoked by dark-mode-notify (see setup_theme_sync) when macOS switches
+# between light and dark. The active theme is whatever theme-set last chose;
+# re-applying it picks the variant matching the new appearance.
 
-KITTY="/Applications/kitty.app/Contents/MacOS/kitty"
-
-# Clean up stale sockets
-for SOCKET in /tmp/kitty*; do
-  [ -S "$SOCKET" ] && ! lsof "$SOCKET" 2>&1 | grep -q kitty && rm "$SOCKET"
-done
-
-# Update all active kitty instances (colors + transparency for the new mode)
-for SOCKET in /tmp/kitty*; do
-  if [ -S "$SOCKET" ]; then
-    $KITTY @ --to unix:$SOCKET set-colors -a "~/.config/kitty/current-theme.conf"
-  fi
-done
+exec "${DOTFILES:-$HOME/.dotfiles}/theme-set" --reload

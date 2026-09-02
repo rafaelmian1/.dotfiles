@@ -1,0 +1,187 @@
+#!/bin/bash
+# Select the active colour theme for kitty, tmux, tmux-powerline, nvim,
+# k9s and lazygit.
+#
+#   theme-set                 # show the active theme and list the rest
+#   theme-set tokyo-night     # switch to that theme
+#   theme-set --reload        # re-apply the current theme (light/dark swap)
+#
+# The choice is stored in ~/.theme, which is deliberately not tracked: it is
+# per-machine state, not configuration. Everything else is symlinks into
+# themes/<name>/, so switching never touches git.
+
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
+THEMES_DIR="$DOTFILES/themes"
+STATE="$HOME/.theme"
+
+KITTY_DIR="$HOME/.config/kitty"
+TMUX_DIR="$HOME/.config/tmux"
+K9S_SKINS="$HOME/Library/Application Support/k9s/skins"
+LAZYGIT_DIR="$HOME/Library/Application Support/lazygit"
+
+list_themes() {
+  find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+current_theme() {
+  if [ -r "$STATE" ]; then
+    tr -d '[:space:]' <"$STATE"
+  else
+    echo ""
+  fi
+}
+
+usage() {
+  local active
+  active="$(current_theme)"
+  echo "Active theme: ${active:-none}"
+  echo
+  echo "Available:"
+  list_themes | sed "s/^/  /"
+  echo
+  echo "Usage: theme-set <name> | --reload"
+}
+
+RELOAD_ONLY=0
+case "${1:-}" in
+  "")            usage; exit 0 ;;
+  -h|--help)     usage; exit 0 ;;
+  --reload)      RELOAD_ONLY=1; NAME="$(current_theme)" ;;
+  -*)            echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
+  *)             NAME="$1" ;;
+esac
+
+if [ -z "${NAME:-}" ]; then
+  echo "No theme selected yet; run: theme-set <name>" >&2
+  usage >&2
+  exit 1
+fi
+
+THEME_DIR="$THEMES_DIR/$NAME"
+if [ ! -d "$THEME_DIR" ]; then
+  echo "No such theme: $NAME" >&2
+  echo "Available: $(list_themes | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+# theme.env names the light/dark variants, so nothing here hardcodes them.
+# shellcheck source=/dev/null
+. "$THEME_DIR/theme.env"
+
+# --- record the choice ----------------------------------------------------
+echo "$NAME" >"$STATE"
+
+# --- pick the variant matching the current macOS appearance --------------
+# Absolute path: launchers such as Raycast run this with a minimal PATH.
+if [ "$(/usr/bin/defaults read -g AppleInterfaceStyle 2>/dev/null || echo Light)" = "Dark" ]; then
+  VARIANT="$THEME_DARK_VARIANT"
+  DELTA_FLAG="dark"
+else
+  VARIANT="$THEME_LIGHT_VARIANT"
+  DELTA_FLAG="light"
+fi
+
+# --- kitty ----------------------------------------------------------------
+mkdir -p "$KITTY_DIR"
+ln -sfn "$THEME_DIR/kitty-$VARIANT.conf" "$KITTY_DIR/current-theme.conf"
+ln -sfn "$THEME_DIR/kitty-opacity.conf" "$KITTY_DIR/current-opacity.conf"
+
+# --- tmux + tmux-powerline ------------------------------------------------
+# The powerline theme link lives in the repo, because ~/.config/tmux-powerline
+# /themes is itself a symlink to that directory. It is gitignored.
+mkdir -p "$TMUX_DIR" "$DOTFILES/.config/tmux-powerline/themes"
+ln -sfn "$THEME_DIR/tmux-$VARIANT.conf" "$TMUX_DIR/current-theme.conf"
+ln -sfn "$THEME_DIR/tmux-powerline-$VARIANT.sh" \
+        "$DOTFILES/.config/tmux-powerline/themes/current.sh"
+
+# --- k9s ------------------------------------------------------------------
+# k9s reads whichever skin its config names; keep that stable at "current"
+# and repoint the link instead of rewriting the config.
+mkdir -p "$K9S_SKINS"
+ln -sfn "$THEME_DIR/k9s-$VARIANT.yaml" "$K9S_SKINS/current.yaml"
+
+# --- lazygit --------------------------------------------------------------
+# Two complete configs per theme, one per delta appearance, so switching is
+# a symlink swap and nothing in the repo is rewritten at runtime.
+mkdir -p "$LAZYGIT_DIR"
+rm -f "$LAZYGIT_DIR/config.yml"
+ln -sfn "$THEME_DIR/lazygit-$DELTA_FLAG.yml" "$LAZYGIT_DIR/config.yml"
+
+# --- push the new colours into running programs ---------------------------
+KITTY_BIN="/Applications/kitty.app/Contents/MacOS/kitty"
+if [ -x "$KITTY_BIN" ]; then
+  for socket in /tmp/kitty*; do
+    [ -S "$socket" ] || continue
+    if lsof "$socket" >/dev/null 2>&1; then
+      "$KITTY_BIN" @ --to "unix:$socket" set-colors -a \
+        "$KITTY_DIR/current-theme.conf" 2>/dev/null || true
+    else
+      rm -f "$socket"
+    fi
+  done
+fi
+
+# launchd and Raycast run this with a minimal PATH that excludes Homebrew,
+# so resolving tmux by name alone silently skips the reload and the bar keeps
+# the previous appearance's colours.
+TMUX_BIN=""
+for candidate in \
+  "$(command -v tmux 2>/dev/null || true)" \
+  /opt/homebrew/bin/tmux \
+  /usr/local/bin/tmux \
+  /usr/bin/tmux
+do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    TMUX_BIN="$candidate"
+    break
+  fi
+done
+
+# --- running nvim instances -----------------------------------------------
+# Every nvim opens an RPC socket under $TMPDIR/nvim.$USER/*/. Applying the
+# theme through each one is what lets a switch made from the shell, Raycast
+# or dark-notify reach editors that are already open.
+NVIM_BIN=""
+for candidate in \
+  "$(command -v nvim 2>/dev/null || true)" \
+  /opt/homebrew/bin/nvim \
+  /usr/local/bin/nvim \
+  "$HOME/.local/share/bob/nvim-bin/nvim"
+do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    NVIM_BIN="$candidate"
+    break
+  fi
+done
+
+if [ -n "$NVIM_BIN" ]; then
+  nvim_sockets="$(find "${TMPDIR:-/tmp}/nvim.${USER}" -type s 2>/dev/null || true)"
+  for socket in $nvim_sockets; do
+    # Skip the instance that invoked us; it has already applied the theme.
+    [ "$socket" = "${THEME_SET_SKIP_NVIM:-}" ] && continue
+    # Fire and forget, with a hard timeout: a stale socket from a crashed
+    # nvim, or an editor sitting at a prompt, must not hold up the switch.
+    (
+      "$NVIM_BIN" --server "$socket" --remote-expr \
+        "luaeval(\"tostring(require('config.theme').apply('$NAME'))\")" \
+        >/dev/null 2>&1 &
+      rpc_pid=$!
+      ( sleep 2; kill "$rpc_pid" 2>/dev/null ) >/dev/null 2>&1 &
+      wait "$rpc_pid" 2>/dev/null
+    ) >/dev/null 2>&1 &
+  done
+fi
+
+if [ -n "$TMUX_BIN" ] && "$TMUX_BIN" has-session 2>/dev/null; then
+  "$TMUX_BIN" source-file "$TMUX_DIR/tmux.conf" >/dev/null 2>&1 || true
+  # Repaint immediately rather than waiting for the next status interval.
+  "$TMUX_BIN" refresh-client -S 2>/dev/null || true
+fi
+
+if [ "$RELOAD_ONLY" = "1" ]; then
+  echo "Reloaded $THEME_DISPLAY ($VARIANT)."
+else
+  echo "Theme: $THEME_DISPLAY ($VARIANT)."
+fi

@@ -1,0 +1,27 @@
+# ~/.gitconfig — shared across machines.
+# Identity and machine-specific rules live in the overlays included at the bottom.
+
+[init]
+	defaultBranch = main
+[push]
+	autoSetupRemote = true
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+[merge]
+	conflictstyle = zdiff3
+[rerere]
+	enabled = false
+[credential]
+	# macOS Keychain. On Linux, override in the overlay, e.g. helper = libsecret
+	helper = osxkeychain
+
+# Machine overlays (gitignored). Git skips include paths that don't exist, so
+# each machine only picks up its own. Last, so they override everything above.
+[include]
+	path = ~/.dotfiles/personal/.gitconfig
+[include]
+	path = ~/.dotfiles/tkww/.gitconfig

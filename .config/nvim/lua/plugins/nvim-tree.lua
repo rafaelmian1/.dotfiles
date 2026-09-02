@@ -1,9 +1,7 @@
 local M = { 'nvim-tree/nvim-tree.lua' }
 
 M.config = function()
-    -- toggle/focus file tree
-    vim.keymap.set('n', '<Leader>ef', ':NvimTreeFindFile<cr>', { desc = 'Find file in file explorer', noremap = true, silent = true })
-    vim.keymap.set('n', '<Leader>et', ':NvimTreeToggle<cr>', { desc = 'Toggle file explorer', noremap = true, silent = true })
+    vim.keymap.set('n', '<Leader>et', ':NvimTreeFindFileToggle<cr>', { desc = 'Toggle file explorer', noremap = true, silent = true })
 
     vim.g.loaded_netrw = 1
     vim.g.loaded_netrwPlugin = 1
